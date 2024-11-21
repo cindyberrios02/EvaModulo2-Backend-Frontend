@@ -1,0 +1,28 @@
+server:
+  port: 8082
+  servlet:
+    session:
+      timeout: 30m
+
+api:
+  url: http://localhost:8081
+
+spring:
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    prefix: classpath:/templates/
+  security:
+    enabled: false
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+logging:
+  level:
+    com.uniandes.calificacionesfrontend: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG

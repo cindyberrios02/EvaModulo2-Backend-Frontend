@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: calificaciones_db
+    environment:
+      POSTGRES_DB: calificaciones
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5433:5432"  # Cambiamos a puerto 5433 externo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - calificaciones-network
+
+networks:
+  calificaciones-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

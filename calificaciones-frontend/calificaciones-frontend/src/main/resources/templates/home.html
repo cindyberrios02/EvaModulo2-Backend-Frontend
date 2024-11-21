@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Sistema de Calificaciones</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">Sistema de Calificaciones</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <span class="nav-link text-light" th:text="${'Usuario: ' + username}"></span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/logout}">Cerrar Sesión</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Lista de Alumnos</h5>
+                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#agregarAlumnoModal">
+                        Agregar Alumno
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(alumnos)}" class="alert alert-info">
+                        No hay alumnos registrados en el sistema.
+                    </div>
+
+                    <div th:if="${not #lists.isEmpty(alumnos)}" class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th>RUT</th>
+                                <th>Nombre</th>
+                                <th>Dirección</th>
+                                <th>Materias</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="alumno : ${alumnos}">
+                                <td th:text="${alumno.rut}"></td>
+                                <td th:text="${alumno.nombre}"></td>
+                                <td th:text="${alumno.direccion}"></td>
+                                <td>
+                                    <ul class="list-unstyled mb-0">
+                                        <li th:each="materia : ${alumno.materiaList}"
+                                            th:text="${materia.nombre}"
+                                            class="badge bg-primary me-1">
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1"
+                                            th:attr="onclick=|mostrarModalMateria('${alumno.id}')|">
+                                        Agregar Materia
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Alumno -->
+<div class="modal fade" id="agregarAlumnoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Nuevo Alumno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="alumnoForm">
+                    <div class="mb-3">
+                        <label for="rut" class="form-label">RUT</label>
+                        <input type="text" class="form-control" id="rut" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarAlumno()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Materia -->
+<div class="modal fade" id="materiaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Materia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="alumnoId">
+                <div class="mb-3">
+                    <label for="nombreMateria" class="form-label">Nombre de la Materia</label>
+                    <input type="text" class="form-control" id="nombreMateria" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarMateria()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    let alumnoModal;
+    let materiaModal;
+
+    window.onload = function() {
+        alumnoModal = new bootstrap.Modal(document.getElementById('agregarAlumnoModal'));
+        materiaModal = new bootstrap.Modal(document.getElementById('materiaModal'));
+    };
+
+    async function guardarAlumno() {
+        const alumno = {
+            rut: document.getElementById('rut').value,
+            nombre: document.getElementById('nombre').value,
+            direccion: document.getElementById('direccion').value,
+            materiaList: []
+        };
+
+        try {
+            const response = await fetch('/api/alumnos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(alumno)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alumnoModal.hide();
+                location.reload();
+            } else {
+                alert(data.message || 'Error al guardar el alumno');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al guardar el alumno');
+        }
+    }
+
+    function mostrarModalMateria(alumnoId) {
+        document.getElementById('alumnoId').value = alumnoId;
+        document.getElementById('nombreMateria').value = '';
+        materiaModal.show();
+    }
+
+    async function guardarMateria() {
+        const alumnoId = document.getElementById('alumnoId').value;
+        const nombreMateria = document.getElementById('nombreMateria').value;
+
+        if (!nombreMateria) {
+            alert('El nombre de la materia es requerido');
+            return;
+        }
+
+        const materia = {
+            nombre: nombreMateria,
+            alumno: { id: alumnoId }
+        };
+
+        try {
+            const response = await fetch('/api/materias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(materia)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                materiaModal.hide();
+                location.reload();
+            } else {
+                alert(data.message || 'Error al guardar la materia');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al guardar la materia');
+        }
+    }
+</script>
+</body>
+</html>
